@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  db-store:
+    image: postgres
+    environment:
+      - POSTGRES_DB=dev-store
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+  web:
+    build: .
+    env_file:
+      - ./store/.env
+    environment:
+      - DATABASE_URL=psql://postgres:postgres@db-store:5432/dev-store
+    ports:
+      - "8002:8002"
+    depends_on:
+      - db-store
