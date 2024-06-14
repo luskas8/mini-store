@@ -1,14 +1,15 @@
-version: "3.8"
-
 services:
   db-store:
-    image: postgres
+    image: postgres:16
     environment:
       - POSTGRES_DB=dev-store
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     volumes:
-      - posgress:/var/lib/postgresql/data
+      - ./postgresql-data:/var/lib/postgresql/data
+      - ./postgresql-init:/docker-entrypoint-initdb.d
+    ports:
+      - "7676:5432"
 
   web:
     build: .
