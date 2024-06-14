@@ -1,6 +1,8 @@
 import re
 from django.db import models
+from utils.db import ModelUUIDBased
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from uuid import uuid5, NAMESPACE_OID
 
 
 class UserManager(BaseUserManager):
@@ -25,7 +27,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    
+    id = models.UUIDField(primary_key=True, editable=False)
     username = models.CharField('username', max_length=15, unique=True)
     first_name = models.CharField('first name', max_length=30)
     last_name = models.CharField('last name', max_length=30)
@@ -46,9 +48,26 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name = 'user'
         verbose_name_plural = 'users'
 
+    def save(self, *args, **kwargs):
+        if not self.id:
+            from datetime import datetime
+            self.id = uuid5(NAMESPACE_OID,self.email + datetime.now().isoformat())
+        super().save(*args, **kwargs)
+
     def get_full_name(self):
         full_name = '%s %s' % (self.first_name, self.last_name)
         return full_name.strip()
 
     def get_short_name(self):
         return self.first_name
+
+    def clean(self):
+        super().clean()
+        self.email = self.__class__.objects.normalize_email(self.email)
+
+    @property
+    def to_json(self):
+        dictionary = {}
+        for field in self._meta.concrete_fields:
+            dictionary[field.name] = self.__getattribute__(field.name)
+        return dictionary
